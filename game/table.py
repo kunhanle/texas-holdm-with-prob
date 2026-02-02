@@ -317,8 +317,8 @@ class Table:
             # 只剩一人，直接獲勝
             winner = active_players[0]
             winner.win_pot(self.pot.total)
-            self.pot.reset()
             self._record_hand([winner])
+            self.pot.reset()
             self._end_hand()
             return
         
@@ -343,8 +343,8 @@ class Table:
         for winner, amount in payouts.items():
             winner.win_pot(amount)
         
-        self.pot.reset()
         self._record_hand(winners)
+        self.pot.reset()
         self._end_hand()
     
     def _end_hand(self) -> None:
