@@ -14,4 +14,4 @@ EXPOSE 8000
 
 # Start application using PORT environment variable
 # We use shell form to ensure any environment variables are handled correctly
-CMD sh -c "python app.py"
+CMD sh -c "gunicorn app:app --bind 0.0.0.0:${PORT:-8000}"
