@@ -241,6 +241,14 @@ class Table:
             if self.on_player_action:
                 self.on_player_action(player, action, amount)
             
+            # Check if only one player remains (Fold Win)
+            # This should happen immediately after a fold
+            active_players = self.get_active_players()
+            if len(active_players) == 1:
+                # Direct win via showdown logic (which handles 1 player)
+                self._showdown()
+                return True
+            
             # 移動到下一個玩家
             self._advance_to_next_player()
         
@@ -309,6 +317,7 @@ class Table:
             # 只剩一人，直接獲勝
             winner = active_players[0]
             winner.win_pot(self.pot.total)
+            self.pot.reset()
             self._record_hand([winner])
             self._end_hand()
             return
@@ -334,6 +343,7 @@ class Table:
         for winner, amount in payouts.items():
             winner.win_pot(amount)
         
+        self.pot.reset()
         self._record_hand(winners)
         self._end_hand()
     
