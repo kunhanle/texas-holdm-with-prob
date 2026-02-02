@@ -141,10 +141,26 @@ class PokerGame {
     }
 
     updateUI(state) {
+        if (!state) return;
+
+        // Check for error (e.g. session expired)
+        if (state.error) {
+            console.error('Game error:', state.error);
+            if (state.error.includes('No active game')) {
+                alert('遊戲連線已中斷，請重新開始');
+                location.reload();
+            }
+            return;
+        }
+
         // 基本資訊
+
         document.getElementById('hand-num').textContent = state.hand_number;
         document.getElementById('stage').textContent = this.translateStage(state.stage);
-        document.getElementById('pot').textContent = `$${state.pot}`;
+
+        // Handle pot display
+        const potValue = (state.pot !== undefined && state.pot !== null) ? state.pot : 0;
+        document.getElementById('pot').textContent = `$${potValue}`;
 
         // 公共牌
         this.renderCommunityCards(state.community_cards);
