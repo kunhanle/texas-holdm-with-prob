@@ -364,10 +364,14 @@ class Table:
         """
         獲取當前遊戲狀態（用於UI顯示和AI決策）
         """
+        # 計算當前輪的下注總額（避免UI重複顯示）
+        current_bets_sum = sum(p.current_bet for p in self.players)
+        display_pot = max(0, self.pot.total - current_bets_sum)
+
         return {
             "stage": self.stage.name,
             "community_cards": [c.display for c in self.community_cards],
-            "pot": self.pot.total,
+            "pot": display_pot,
             "current_bet": self.betting_round.current_bet if self.betting_round else 0,
             "players": [
                 {
