@@ -311,12 +311,80 @@ class WebGame:
             "community_cards": community,
             "players": players,
             "available_actions": actions,
-            "analysis": analysis,
-            "advice": advice,
+            "analysis": None, # On demand now
+            "advice": None,   # On demand now
             "current_hand": current_hand,
             "messages": self.message_log[-5:],
             "hand_result": self.hand_result,
             "is_game_over": self.human_player.chips <= 0 or len([p for p in self.table.players if p.chips > 0]) < 2
+        }
+
+    def get_analysis(self) -> dict:
+        """獲取機率分析（按需計算）"""
+        analysis = None
+        advice = None
+        
+        if self.human_player.hole_cards and self.table.stage not in [GameStage.SHOWDOWN, GameStage.FINISHED]:
+            num_opponents = len([p for p in self.table.players if p.is_active and p != self.human_player])
+            if num_opponents > 0:
+                call_amount = 0
+                if self.table.betting_round:
+                    call_amount = self.table.betting_round.get_amount_to_call(self.human_player)
+                
+                # Check cache
+                current_key = (
+                    str(self.human_player.hole_cards),
+                    str(self.table.community_cards),
+                    num_opponents,
+                    self.table.pot.total,
+                    call_amount
+                )
+                
+                if current_key == self.last_analysis_key and self.cached_analysis:
+                    result = self.cached_analysis
+                else:
+                    result = self.calculator.full_analysis(
+                        self.human_player.hole_cards,
+                        self.table.community_cards,
+                        num_opponents,
+                        self.table.pot.total,
+                        call_amount
+                    )
+                    self.cached_analysis = result
+                    self.last_analysis_key = current_key
+                
+                analysis = {
+                    "win_rate": result.win_rate,
+                    "pot_odds": result.pot_odds,
+                    "ev": result.expected_value,
+                    "hand_strength": result.hand_strength,
+                    "outs": [
+                        {"name": o.target_hand, "count": o.count, "probability": o.probability}
+                        for o in result.outs_list
+                    ]
+                }
+                
+                # 獲取建議
+                adv = self.advisor.get_advice(
+                    self.human_player.hole_cards,
+                    self.table.community_cards,
+                    num_opponents,
+                    self.table.pot.total,
+                    call_amount,
+                    self.human_player.chips,
+                    call_amount == 0
+                )
+                
+                advice = {
+                    "level": adv.level.value,
+                    "action": adv.action,
+                    "reasoning": adv.reasoning,
+                    "teaching_points": adv.teaching_points[:2]
+                }
+        
+        return {
+            "analysis": analysis,
+            "advice": advice
         }
 
 
@@ -382,6 +450,16 @@ def player_action():
         "success": success,
         **game.get_state()
     })
+
+
+@app.route('/api/game/analyze', methods=['GET'])
+def get_analysis():
+    """獲取分析數據"""
+    game_id = session.get('game_id')
+    if not game_id or game_id not in games:
+        return jsonify({"error": "No active game"}), 400
+    
+    return jsonify(games[game_id].get_analysis())
 
 
 if __name__ == '__main__':
