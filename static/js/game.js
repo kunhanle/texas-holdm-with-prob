@@ -93,7 +93,28 @@ class PokerGame {
 
     toggleAnalysisPanel() {
         const panel = document.querySelector('.analysis-panel');
-        panel.classList.toggle('hidden');
+        const isHidden = panel.classList.toggle('hidden');
+
+        if (!isHidden) {
+            this.fetchAnalysis();
+        }
+    }
+
+    async fetchAnalysis() {
+        // Show loading state if needed, or just update when ready
+        // document.getElementById('win-rate').textContent = '...';
+
+        try {
+            const res = await fetch('/api/game/analyze');
+            const data = await res.json();
+
+            if (data.analysis || data.advice) {
+                this.updateAnalysis(data.analysis);
+                this.updateAdvice(data.advice);
+            }
+        } catch (err) {
+            console.error('Analysis failed:', err);
+        }
     }
 
     async startGame() {
@@ -181,11 +202,18 @@ class PokerGame {
         // 可用動作
         this.updateActions(state.available_actions);
 
-        // 機率分析
-        this.updateAnalysis(state.analysis);
+        // 機率分析 (If panel is open, fetch it)
+        const panel = document.querySelector('.analysis-panel');
+        if (panel && !panel.classList.contains('hidden')) {
+            this.fetchAnalysis();
+        } else {
+            // Keep existing values or clear them? Better to keep them until refresh.
+            // but updateUI might clear them if we pass null.
+            // Let's rely on fetchAnalysis to update them.
+        }
 
-        // 教學建議
-        this.updateAdvice(state.advice);
+        // 教學建議 (Fetched with analysis)
+        // this.updateAdvice(state.advice); // Removed from here, handled in fetchAnalysis
 
         // 訊息
         this.renderMessages(state.messages);
