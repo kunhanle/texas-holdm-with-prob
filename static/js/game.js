@@ -108,6 +108,11 @@ class PokerGame {
             const res = await fetch('/api/game/analyze');
             const data = await res.json();
 
+            if (data.error) {
+                this.updateUI({ error: data.error });
+                return;
+            }
+
             if (data.analysis || data.advice) {
                 this.updateAnalysis(data.analysis);
                 this.updateAdvice(data.advice);

@@ -25,7 +25,7 @@ from probability.calculator import ProbabilityCalculator
 from probability.advisor import DecisionAdvisor
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(16)
+app.secret_key = os.environ.get("SECRET_KEY", "dev_secret_key_fixed_12345")
 
 # 遊戲狀態存儲（簡單實現，實際應用可用 Redis 等）
 games = {}
