@@ -139,7 +139,9 @@ class WebGame:
         
         if len(active_players) == 1:
             winner = active_players[0]
-            pot = self.table.pot.total
+            winner = active_players[0]
+            # Use history to get pot amount since it's reset after hand
+            pot = self.table.history[-1].pot_amount if self.table.history else 0
             # winner.win_pot(pot) # Removed: Table already handles this in _showdown or _end_hand check?
             # Wait, check Table._showdown logic. 
             # If Table stage is FINISHED, checks must ensure chips aren't added twice.
@@ -165,7 +167,9 @@ class WebGame:
         best_result = results[0][1]
         winners = [p for p, r in results if r == best_result]
         
-        pot = self.table.pot.total
+        
+        # Use history to get pot amount since it's reset after hand
+        pot = self.table.history[-1].pot_amount if self.table.history else 0
         # share = pot // len(winners)
         # for winner in winners:
         #     winner.win_pot(share) # Removed: Table handles this
