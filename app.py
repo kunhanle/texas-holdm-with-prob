@@ -53,16 +53,22 @@ class WebGame:
             ai = AIOpponent(ai_difficulty, personality)
             self.ai_opponents.append((ai_player, ai))
         
-        self.calculator = ProbabilityCalculator(simulation_count=1500)
+        self.calculator = ProbabilityCalculator(simulation_count=300)
         self.advisor = DecisionAdvisor()
         self.message_log = []
         self.hand_result = None
+        
+        # Caching
+        self.last_analysis_key = None
+        self.cached_analysis = None
     
     def start_new_hand(self):
         """開始新一局"""
         self.table.start_new_hand()
         self.message_log = []
         self.hand_result = None
+        self.last_analysis_key = None
+        self.cached_analysis = None
         self._process_ai_until_human()
     
     def _process_ai_until_human(self):
@@ -230,13 +236,27 @@ class WebGame:
                 if self.table.betting_round:
                     call_amount = self.table.betting_round.get_amount_to_call(self.human_player)
                 
-                result = self.calculator.full_analysis(
-                    self.human_player.hole_cards,
-                    self.table.community_cards,
+                # Check cache
+                current_key = (
+                    str(self.human_player.hole_cards),
+                    str(self.table.community_cards),
                     num_opponents,
                     self.table.pot.total,
                     call_amount
                 )
+                
+                if current_key == self.last_analysis_key and self.cached_analysis:
+                    result = self.cached_analysis
+                else:
+                    result = self.calculator.full_analysis(
+                        self.human_player.hole_cards,
+                        self.table.community_cards,
+                        num_opponents,
+                        self.table.pot.total,
+                        call_amount
+                    )
+                    self.cached_analysis = result
+                    self.last_analysis_key = current_key
                 
                 analysis = {
                     "win_rate": result.win_rate,
