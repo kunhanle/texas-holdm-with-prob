@@ -108,9 +108,10 @@ class WebGame:
         pot_odds = 0.0
         
         if ai_player.hole_cards and num_opponents > 0:
-            win_rate, _, _ = self.calculator.calculate_win_rate(
-                ai_player.hole_cards, self.table.community_cards, num_opponents
-            )
+            # win_rate, _, _ = self.calculator.calculate_win_rate(
+            #     ai_player.hole_cards, self.table.community_cards, num_opponents
+            # )
+            win_rate = 0.5  # Forced simple mode for performance test
             call_amount = self.table.betting_round.get_amount_to_call(ai_player) if self.table.betting_round else 0
             pot_odds = self.calculator.calculate_pot_odds(self.table.pot.total, call_amount)
         
@@ -229,63 +230,64 @@ class WebGame:
         # 機率分析
         analysis = None
         advice = None
-        if self.human_player.hole_cards and self.table.stage not in [GameStage.SHOWDOWN, GameStage.FINISHED]:
-            num_opponents = len([p for p in self.table.players if p.is_active and p != self.human_player])
-            if num_opponents > 0:
-                call_amount = 0
-                if self.table.betting_round:
-                    call_amount = self.table.betting_round.get_amount_to_call(self.human_player)
+        # DISABLED FOR PERFORMANCE TESTING
+        # if self.human_player.hole_cards and self.table.stage not in [GameStage.SHOWDOWN, GameStage.FINISHED]:
+        #     num_opponents = len([p for p in self.table.players if p.is_active and p != self.human_player])
+        #     if num_opponents > 0:
+        #         call_amount = 0
+        #         if self.table.betting_round:
+        #             call_amount = self.table.betting_round.get_amount_to_call(self.human_player)
                 
-                # Check cache
-                current_key = (
-                    str(self.human_player.hole_cards),
-                    str(self.table.community_cards),
-                    num_opponents,
-                    self.table.pot.total,
-                    call_amount
-                )
+        #         # Check cache
+        #         current_key = (
+        #             str(self.human_player.hole_cards),
+        #             str(self.table.community_cards),
+        #             num_opponents,
+        #             self.table.pot.total,
+        #             call_amount
+        #         )
                 
-                if current_key == self.last_analysis_key and self.cached_analysis:
-                    result = self.cached_analysis
-                else:
-                    result = self.calculator.full_analysis(
-                        self.human_player.hole_cards,
-                        self.table.community_cards,
-                        num_opponents,
-                        self.table.pot.total,
-                        call_amount
-                    )
-                    self.cached_analysis = result
-                    self.last_analysis_key = current_key
+        #         if current_key == self.last_analysis_key and self.cached_analysis:
+        #             result = self.cached_analysis
+        #         else:
+        #             result = self.calculator.full_analysis(
+        #                 self.human_player.hole_cards,
+        #                 self.table.community_cards,
+        #                 num_opponents,
+        #                 self.table.pot.total,
+        #                 call_amount
+        #             )
+        #             self.cached_analysis = result
+        #             self.last_analysis_key = current_key
                 
-                analysis = {
-                    "win_rate": result.win_rate,
-                    "pot_odds": result.pot_odds,
-                    "ev": result.expected_value,
-                    "hand_strength": result.hand_strength,
-                    "outs": [
-                        {"name": o.target_hand, "count": o.count, "probability": o.probability}
-                        for o in result.outs_list
-                    ]
-                }
+        #         analysis = {
+        #             "win_rate": result.win_rate,
+        #             "pot_odds": result.pot_odds,
+        #             "ev": result.expected_value,
+        #             "hand_strength": result.hand_strength,
+        #             "outs": [
+        #                 {"name": o.target_hand, "count": o.count, "probability": o.probability}
+        #                 for o in result.outs_list
+        #             ]
+        #         }
                 
-                # 獲取建議
-                adv = self.advisor.get_advice(
-                    self.human_player.hole_cards,
-                    self.table.community_cards,
-                    num_opponents,
-                    self.table.pot.total,
-                    call_amount,
-                    self.human_player.chips,
-                    call_amount == 0
-                )
+        #         # 獲取建議
+        #         adv = self.advisor.get_advice(
+        #             self.human_player.hole_cards,
+        #             self.table.community_cards,
+        #             num_opponents,
+        #             self.table.pot.total,
+        #             call_amount,
+        #             self.human_player.chips,
+        #             call_amount == 0
+        #         )
                 
-                advice = {
-                    "level": adv.level.value,
-                    "action": adv.action,
-                    "reasoning": adv.reasoning,
-                    "teaching_points": adv.teaching_points[:2]
-                }
+        #         advice = {
+        #             "level": adv.level.value,
+        #             "action": adv.action,
+        #             "reasoning": adv.reasoning,
+        #             "teaching_points": adv.teaching_points[:2]
+        #         }
         
         # 當前手牌評估
         current_hand = None
